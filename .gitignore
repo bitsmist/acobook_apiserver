@@ -1,0 +1,4 @@
+!.gitkeep
+/sites/
+/vendor/
+composer.lock
