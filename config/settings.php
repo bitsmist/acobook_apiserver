@@ -7,8 +7,8 @@ return [
 	"phpOptions" => [
 		"display_errors" => "0",
 		"display_startup_errors" => "0",
-		"session.cookie_httponly" => true,
-		"session.cookie_secure" => true,
+		//"session.cookie_httponly" => true,
+		//"session.cookie_secure" => true,
 	],
 
 	// -------------------------------------------------------------------------
@@ -28,12 +28,12 @@ return [
 
 	// Request
 	"request" => [
-		"className" => "\Zend\Diactoros\ServerRequestFactory",
+		"className" => "\Laminas\Diactoros\ServerRequestFactory",
 	],
 
 	// Response
 	"response" => [
-		"className" => "\Zend\Diactoros\Response",
+		"className" => "\Laminas\Diactoros\Response",
 	],
 
 	// -------------------------------------------------------------------------
@@ -51,25 +51,32 @@ return [
 	],
 
 	// -------------------------------------------------------------------------
-	//	Services
+	//	Controllers
 	// -------------------------------------------------------------------------
 
-	"services" => [
-		"className" => "Bitsmist\\v1\Services\ServiceManager",
+	"controllers" => [
+		"className" => "Bitsmist\\v1\Services\PluginService",
 		"uses" => [
 			"setupController",
 			"mainController",
 			"errorController",
-			"emitter",
+			"emitterController",
 		]
 	],
 
 	"setupController" => [
 		"className" => "Bitsmist\\v1\Services\MiddlewareService",
 		"uses" => [
+			"sysInfoInitializer",
+			// First Stage
 			"routeInitializer",
+			"appInfoInitializer",
 			"settingsInitializer",
 			"phpInitializer",
+			// Second Stage
+			"routeInitializer2",
+			"settingsInitializer2",
+			"phpInitializer2",
 		]
 	],
 
@@ -120,15 +127,28 @@ return [
 		],
 	],
 
-	"emitter" => [
+	"emitterController" => [
+		"className" => "Bitsmist\\v1\Plugins\Emitter\HttpEmitter",
+	],
+
+	// -------------------------------------------------------------------------
+	//	Services
+	// -------------------------------------------------------------------------
+
+	"services" => [
 		"className" => "Bitsmist\\v1\Services\PluginService",
 		"uses" => [
-			"httpEmitter"
+			"logger",
+			"db",
 		]
 	],
 
 	"logger" => [
 		"className" => "Bitsmist\\v1\Services\PluginService",
+		"uses" => [
+			//"warningLogger"
+			"debugLogger"
+		]
 	],
 
 	"db" => [
@@ -139,8 +159,18 @@ return [
 	//	Plugins
 	// -------------------------------------------------------------------------
 
-	"httpEmitter" => [
-		"className" => "Bitsmist\\v1\Plugins\Emitter\HttpEmitter",
+	"debugLogger" => [
+		"className" => "Bitsmist\\v1\Plugins\Logger\FileLogger",
+		"level" => "debug",
+		"baseDir" => __DIR__ . "/../log/",
+		"fileName" => "bitsmist_debug.log",
+	],
+
+	"warningLogger" => [
+		"className" => "Bitsmist\\v1\Plugins\Logger\FileLogger",
+		"level" => "warning",
+		"baseDir" => __DIR__ . "/../log/",
+		"fileName" => "bitsmist_warning.log",
 	],
 
 	// -------------------------------------------------------------------------
@@ -153,12 +183,30 @@ return [
 		"className" => "Bitsmist\\v1\Middlewares\Initializer\RouteInitializer",
 	],
 
+	"routeInitializer2" => [
+		"className" => "Bitsmist\\v1\Middlewares\Initializer\RouteInitializer",
+	],
+
+	"sysInfoInitializer" => [
+		"className" => "Bitsmist\\v1\Middlewares\Initializer\SysInfoInitializer",
+	],
+
+	"appInfoInitializer" => [
+		"className" => "Bitsmist\\v1\Middlewares\Initializer\AppInfoInitializer",
+	],
+
 	"settingsInitializer" => [
 		"className" => "Bitsmist\\v1\Middlewares\Initializer\SettingsInitializer",
 		"uses" => [
 			"{appRoot}/config/settings.php",
 			"{sysRoot}/config/{method}.php",
 			"{appRoot}/config/{method}.php",
+		]
+	],
+
+	"settingsInitializer2" => [
+		"className" => "Bitsmist\\v1\Middlewares\Initializer\SettingsInitializer",
+		"uses" => [
 			"{sysRoot}/config/{resource}.php",
 			"{appRoot}/config/{resource}.php",
 			"{sysRoot}/config/{method}_{resource}.php",
@@ -167,6 +215,10 @@ return [
 	],
 
 	"phpInitializer" => [
+		"className" => "Bitsmist\\v1\Middlewares\Initializer\PHPInitializer"
+	],
+
+	"phpInitializer2" => [
 		"className" => "Bitsmist\\v1\Middlewares\Initializer\PHPInitializer"
 	],
 
